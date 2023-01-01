@@ -212,9 +212,81 @@ def all_continuous(vars):
         return True
 
 
+def try_fast_nuts(
+    draws: int = 1000,
+    initvals: Optional[Union[StartDict, Sequence[Optional[StartDict]]]] = None,
+    chains: Optional[int] = None,
+    cores: Optional[int] = None,
+    tune: int = 1000,
+    progressbar: bool = True,
+    model=None,
+    random_seed: RandomState = None,
+    discard_tuned_samples: bool = True,
+    **kwargs,
+):
+    target_accept = kwargs.get("nuts", {}).get("target_accept", 0.8)
+    # Try different fast samplers in order of their speed
+    try:
+        _log.info("Trying nutpie sampler...")
+        import nutpie
+
+        compiled_model = nutpie.compile_pymc_model(model)
+        idata = nutpie.sample(
+            compiled_model,
+            draws=draws,
+            tune=tune,
+            chains=chains,
+            seed=random_seed,
+            save_warmup=~discard_tuned_samples,
+        )
+        return idata
+    except ImportError:
+        _log.info("nutpie not found. Install it with mamba install -c conda-forge nutpie")
+    except Exception as e:
+        _log.info(e)
+    try:
+        _log.info("Trying NumPyro JAX sampler...")
+        import pymc.sampling.jax as pymc_jax
+
+        idata = pymc_jax.sample_numpyro_nuts(
+            draws=draws,
+            tune=tune,
+            chains=chains,
+            target_accept=target_accept,
+            random_seed=random_seed,
+            initvals=initvals,
+        )
+        return idata
+    except ImportError:
+        _log.info("NumPyro not found. Install it with mamba install -c conda-forge numpyro")
+    except Exception as e:
+        _log.info(e)
+    try:
+        _log.info("Trying BlackJAX sampler...")
+        import pymc.sampling.jax as pymc_jax
+
+        idata = pymc_jax.sample_blackjax_nuts(
+            draws=draws,
+            tune=tune,
+            chains=chains,
+            target_accept=target_accept,
+            random_seed=random_seed,
+            initvals=initvals,
+        )
+        return idata
+    except ImportError:
+        _log.info("BlackJAX not found. Install it with mamba install -c conda-forge blackjax")
+    except Exception as e:
+        _log.info(e)
+    _log.warning(
+        "No fast sampler found, falling back to Python. For faster sampling, install nutpie, numpyro, or blackjax."
+    )
+
+
 def sample(
     draws: int = 1000,
     step=None,
+    fast_nuts=False,
     init: str = "auto",
     n_init: int = 200_000,
     initvals: Optional[Union[StartDict, Sequence[Optional[StartDict]]]] = None,
@@ -445,6 +517,22 @@ def sample(
 
     initial_points = None
     step = assign_step_methods(model, step, methods=pm.STEP_METHODS, step_kwargs=kwargs)
+
+    if fast_nuts:
+        if not isinstance(step, NUTS):
+            raise ValueError("Model must be continuous for fast_nuts=True.")
+        return try_fast_nuts(
+            draws=draws,
+            initvals=initvals,
+            chains=chains,
+            cores=cores,
+            tune=tune,
+            progressbar=progressbar,
+            model=model,
+            random_seed=random_seed,
+            discard_tuned_samples=discard_tuned_samples,
+            **kwargs,
+        )
 
     if isinstance(step, list):
         step = CompoundStep(step)
