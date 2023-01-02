@@ -272,7 +272,7 @@ def sample_external_nuts(
 
     else:
         raise ValueError(
-            f"Sampler {nuts_sampler} not found. Choose one of ['nutpie', 'numpyro', 'blackjax', 'pymc']."
+            f"Sampler {sampler} not found. Choose one of ['nutpie', 'numpyro', 'blackjax', 'pymc']."
         )
 
 
