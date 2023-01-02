@@ -213,7 +213,7 @@ def all_continuous(vars):
 
 
 def sample_external_nuts(
-    nuts_sampler="nutpie",
+    sampler="nutpie",
     draws: int = 1000,
     initvals: Optional[Union[StartDict, Sequence[Optional[StartDict]]]] = None,
     chains: Optional[int] = None,
@@ -227,7 +227,7 @@ def sample_external_nuts(
 ):
     target_accept = kwargs.get("nuts", {}).get("target_accept", 0.8)
     # Try different fast samplers in order of their speed
-    if nuts_sampler == "nutpie":
+    if sampler == "nutpie":
         try:
             import nutpie
         except ImportError:
@@ -244,7 +244,7 @@ def sample_external_nuts(
         )
         return idata
 
-    elif nuts_sampler == "numpyro":
+    elif sampler == "numpyro":
         import pymc.sampling.jax as pymc_jax
 
         idata = pymc_jax.sample_numpyro_nuts(
@@ -257,7 +257,7 @@ def sample_external_nuts(
         )
         return idata
 
-    elif nuts_sampler == "blackjax":
+    elif sampler == "blackjax":
         import pymc.sampling.jax as pymc_jax
 
         idata = pymc_jax.sample_blackjax_nuts(
@@ -513,6 +513,7 @@ def sample(
 
     if nuts_sampler != "pymc":
         return sample_external_nuts(
+            sampler=nuts_sampler,
             draws=draws,
             initvals=initvals,
             chains=chains,
