@@ -233,14 +233,19 @@ def sample_external_nuts(
         except ImportError:
             _log.info("nutpie not found. Install it with mamba install -c conda-forge nutpie")
 
+        if (draws == 1000) and (tune == 1000):
+            # If default is used, defer to nutpie defaults
+            draws_kwargs = {}
+        else:
+            draws_kwargs = dict(draws=draws, tune=tune)
+
         compiled_model = nutpie.compile_pymc_model(model)
         idata = nutpie.sample(
             compiled_model,
-            draws=draws,
-            tune=tune,
             chains=chains,
             seed=random_seed,
             save_warmup=~discard_tuned_samples,
+            **draws_kwargs,
         )
         return idata
 
