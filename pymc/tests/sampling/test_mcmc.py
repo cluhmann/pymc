@@ -449,6 +449,11 @@ class TestSample(SeededTest):
 
         assert np.allclose(scipy.special.expit(trace["y_interval__"]), trace["y"])
 
+    @pytest.mark.parametrize("nuts_sampler", ["pymc", "nutpie", "blackjax", "numpyro"])
+    def test_nuts_sampler(self, nuts_sampler):
+        with self.model:
+            pm.sample(nuts_sampler=nuts_sampler)
+
 
 def test_sample_find_MAP_does_not_modify_start():
     # see https://github.com/pymc-devs/pymc/pull/4458
