@@ -239,7 +239,7 @@ def sample_external_nuts(
             draws=draws,
             tune=tune,
             chains=chains,
-            # seed=random_seed,
+            seed=_get_seeds_per_chain(random_seed, 1)[0],
             save_warmup=~discard_tuned_samples,
         )
         return idata
