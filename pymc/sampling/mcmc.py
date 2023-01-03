@@ -231,7 +231,7 @@ def sample_external_nuts(
         try:
             import nutpie
         except ImportError:
-            _log.info("nutpie not found. Install it with mamba install -c conda-forge nutpie")
+            _log.info("nutpie not found. Install it with conda install -c conda-forge nutpie")
 
         compiled_model = nutpie.compile_pymc_model(model)
         idata = nutpie.sample(
