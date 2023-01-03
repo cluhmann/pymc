@@ -279,7 +279,7 @@ def sample_external_nuts(
 def sample(
     draws: int = 1000,
     step=None,
-    nuts_sampler="pymc",
+    nuts_sampler: str = "pymc",
     init: str = "auto",
     n_init: int = 200_000,
     initvals: Optional[Union[StartDict, Sequence[Optional[StartDict]]]] = None,
@@ -317,6 +317,10 @@ def sample(
         A step function or collection of functions. If there are variables without step methods,
         step methods for those variables will be assigned automatically. By default the NUTS step
         method will be used, if appropriate to the model.
+    nuts_sampler : str
+        Which NUTS implementation to run. One of ["pymc", "nutpie", "blackjax", "numpyro"].
+        This requires the chosen sampler to be installed.
+        All samplers, except "pymc", require the full model to be continuous.
     n_init : int
         Number of iterations of initializer. Only works for 'ADVI' init methods.
     initvals : optional, dict, array of dict
@@ -512,6 +516,10 @@ def sample(
     step = assign_step_methods(model, step, methods=pm.STEP_METHODS, step_kwargs=kwargs)
 
     if nuts_sampler != "pymc":
+        if not isinstance(step, NUTS):
+            raise ValueError(
+                "Model can not be sampled with NUTS alone. Your model is probably not continuous."
+            )
         return sample_external_nuts(
             sampler=nuts_sampler,
             draws=draws,
